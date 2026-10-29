@@ -3,7 +3,9 @@
 # Re-run after moving this project folder, since the app points at this folder.
 set -e
 PROJECT="$(cd "$(dirname "$0")" && pwd)"
-APP="$HOME/Applications/PDF to Sheet.app"
+DEST="${APP_DEST:-$HOME/Applications}"
+APP="$DEST/PDF to Sheet.app"
+mkdir -p "$DEST"
 BUILD="$(mktemp -d)"
 
 [ -d "$PROJECT/.venv" ] || { python3 -m venv "$PROJECT/.venv" && "$PROJECT/.venv/bin/pip" install -q -r "$PROJECT/requirements.txt"; }

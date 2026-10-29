@@ -1,22 +1,88 @@
 # PDF to Sheet
 
-Local Mac app: drop Foundation Directory Online PDF exports into a window, review the
-parsed rows, and append them to a private Google Sheet. Parsing happens entirely on your Mac.
+A Mac app that turns Foundation Directory Online PDF exports into rows in your Google Sheet.
+Drop PDFs into the window, check the parsed rows, click **Add to Google Sheet**.
 
-## Run
+- PDFs are read **on your Mac**. Nothing is uploaded anywhere except the final rows going to your own sheet.
+- Your sheet stays **private**. The app signs in as you and only asks for Google Sheets access.
 
-Double-click `run.command`, or run `./build_app.sh` to create `~/Applications/PDF to Sheet.app`
-and drag it to the Dock. The app opens at http://127.0.0.1:5757.
+## What you need
 
-## Connect Google
+- A Mac (Apple Silicon or Intel) running macOS 12 or newer
+- Python 3.10 or newer. The install script uses it if present, and installs it via [Homebrew](https://brew.sh) if you have that. Otherwise it tells you where to download it.
+- A Google account and a Google Sheet you can edit
 
-Follow the first-time setup guide in the app's Settings panel (creates a free Google OAuth
-client, then sign in). Optionally place that client's JSON next to `app.py` as
-`google_client.json` so users only need to sign in. Never commit it.
+## Install (about 3 minutes)
 
-## Files
+1. **Get the code.** Open Terminal and run:
 
-- `parser.py` extracts the 20 sheet columns from a PDF
+   ```bash
+   git clone https://github.com/lucas-hennessey/pdf-to-sheet.git
+   cd pdf-to-sheet
+   ```
+
+   The repo is private, so you must be signed in to GitHub. If `git clone` asks for a login, run `gh auth login` first (needs the [GitHub CLI](https://cli.github.com)), or download the ZIP from the repo page, unzip it and `cd` into the folder.
+
+2. **Run the installer:**
+
+   ```bash
+   ./install.sh
+   ```
+
+   It checks Python, installs the dependencies, builds the app, and opens the folder containing **PDF to Sheet.app** (`~/Applications`).
+
+3. **Add it to the Dock.** Drag **PDF to Sheet** from that folder onto your Dock.
+
+4. **Click it.** The app opens in your browser at http://127.0.0.1:5757.
+
+> Keep the `pdf-to-sheet` folder where it is. The app points at it. If you move the folder, run `./install.sh` again from the new location.
+
+## Connect your Google Sheet (first launch only)
+
+The first time you open the app, **Settings** opens with a step-by-step guide. In short:
+
+1. Create a free Google Cloud project and turn on the Google Sheets API (no billing needed).
+2. Create a **Desktop app** OAuth client and download its JSON file.
+3. In the app: choose that JSON file, click **Sign in with Google**, then paste your sheet's URL and tab name and click **Save & test connection**.
+
+Google will say "Google hasn't verified this app". That's expected for your own app: click **Advanced** > **Go to PDF to Sheet (unsafe)**.
+
+While the app is in Google's testing mode, the sign-in expires every 7 days. The app will tell you when that happens, and you just click **Sign in with Google** again.
+
+## Using it
+
+1. Drag one or more PDFs onto the drop area (or click it to choose files).
+2. Check the table. Blank cells are highlighted, and every cell is editable.
+3. Click **Add to Google Sheet**. Foundations already in the sheet (matched by name) are skipped unless you tick the checkbox.
+
+The sheet's columns are: Foundation Name, Address 1, Address 2, City, State, Zip, Average Grant Amount, Subjects, Population Groups, Geographic Focus, Limitations, Application Process, Contact Name, Contact Address 1, Contact Address 2, Contact City, Contact State, Contact Zip, Contact Phone, Contact Email. An empty sheet gets these headers automatically.
+
+Notes:
+- **Average Grant Amount** is the mean of the grants listed in the PDF's Grants table (usually only the first 5).
+- Scanned (image-only) PDFs aren't supported; the PDFs must contain real text.
+
+## Quitting, updating, uninstalling
+
+- **Quit:** right-click the Dock icon > Quit. Closing the browser tab does not stop the app.
+- **Update:** `cd pdf-to-sheet && git pull && ./install.sh`
+- **Uninstall:** delete `~/Applications/PDF to Sheet.app`, the `pdf-to-sheet` folder, and `~/.pdf-to-sheet` (your saved settings and Google sign-in).
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| macOS says the app can't be opened | Right-click the app > **Open** > **Open** (only needed once). |
+| Nothing opens when I click the icon | Check `~/.pdf-to-sheet/app.log`, then try `./run.command` in the folder. |
+| "Access blocked" when signing in | Add your Gmail address under **Audience > Test users** in Google Cloud (setup step 5). |
+| "Your Google sign-in has expired" | Click **Sign in with Google** in Settings. |
+| "Couldn't open that sheet" | Check the URL, and that the account you signed in with can edit the sheet. |
+| Port 5757 already in use | Quit the app from the Dock (or Activity Monitor) and try again. |
+| A field comes back blank | The PDF may not contain it (for example, many have no contact name or email). Fill it in the preview table. |
+
+## For developers
+
+- `parser.py` extracts the 20 sheet columns from a PDF (PyMuPDF)
 - `sheets.py` Google Sheets access (OAuth, Sheets scope only)
-- `app.py` + `templates/index.html` local web UI
-- `build_app.sh` builds the Dock app
+- `app.py` and `templates/index.html` the local web UI (Flask, bound to 127.0.0.1 only)
+- `install.sh` from-scratch setup; `build_app.sh` builds the Dock app; `run.command` runs without the Dock app
+- To skip the Google Cloud steps for other users, put your own OAuth client JSON next to `app.py` as `google_client.json`; users then only click **Sign in**. It's git-ignored. Never commit it.
