@@ -21,7 +21,7 @@ Drop PDFs into the window, check the parsed rows, click **Add to Google Sheet**.
    cd pdf-to-sheet
    ```
 
-   The repo is private, so you must be signed in to GitHub. If `git clone` asks for a login, run `gh auth login` first (needs the [GitHub CLI](https://cli.github.com)), or download the ZIP from the repo page, unzip it and `cd` into the folder.
+   No GitHub account is needed. If you don't have `git`, macOS will offer to install it the first time you run the command. Alternatively, click **Code > Download ZIP** on the [repo page](https://github.com/lucas-hennessey/pdf-to-sheet), unzip it and `cd` into the folder.
 
 2. **Run the installer:**
 
