@@ -85,4 +85,12 @@ def apply():
 def restart():
     """Replace this process with a fresh one (same PID, so a Dock app stays running)."""
     os.environ["PTS_RESTARTED"] = "1"  # tells the new process not to open another browser tab
+    # The dev server's listening socket is inherited across exec and would block the new
+    # server from binding port 5757. Mark descriptors close-on-exec so exec drops them
+    # (closing them by hand can trip macOS-guarded descriptors and kill the process).
+    for fd in range(3, 4096):
+        try:
+            os.set_inheritable(fd, False)
+        except OSError:
+            pass
     os.execv(sys.executable, [sys.executable, "-W", "ignore", str(ROOT / "app.py")])

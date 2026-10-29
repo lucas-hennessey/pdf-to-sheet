@@ -64,7 +64,9 @@ Notes:
 ## Quitting, updating, uninstalling
 
 - **Quit:** right-click the Dock icon > Quit. Closing the browser tab does not stop the app.
-- **Update:** `cd pdf-to-sheet && git pull && ./install.sh`
+- **Update:** when a new version is out, a banner appears at the top of the app: click **Update now**. The app downloads the update, installs anything new it needs, restarts itself and reloads. Your Google sign-in and sheet settings are kept. (It checks GitHub when the app opens, so it needs an internet connection.)
+- **Updating from a version older than 1.1.0:** those don't have the banner. Update once by hand: `cd pdf-to-sheet && git pull && ./install.sh` (or download the ZIP again, replace the folder and run `./install.sh`). After that, updates are one click.
+- **If an update fails:** the banner shows the reason. The usual cause is local edits to the code, which block `git pull`; undo them with `git checkout .` and try again.
 - **Uninstall:** delete `~/Applications/PDF to Sheet.app`, the `pdf-to-sheet` folder, and `~/.pdf-to-sheet` (your saved settings and Google sign-in).
 
 ## Troubleshooting
@@ -84,5 +86,6 @@ Notes:
 - `parser.py` extracts the 20 sheet columns from a PDF (PyMuPDF)
 - `sheets.py` Google Sheets access (OAuth, Sheets scope only)
 - `app.py` and `templates/index.html` the local web UI (Flask, bound to 127.0.0.1 only)
+- `updater.py` the in-app update check and installer. **To release an update:** bump the number in `VERSION` and push to `main`; open copies of the app will show the banner. Git clones update with `git pull`, ZIP installs by re-downloading the branch.
 - `install.sh` from-scratch setup; `build_app.sh` builds the Dock app; `run.command` runs without the Dock app
 - To skip the Google Cloud steps for other users, put your own OAuth client JSON next to `app.py` as `google_client.json`; users then only click **Sign in**. It's git-ignored. Never commit it.
