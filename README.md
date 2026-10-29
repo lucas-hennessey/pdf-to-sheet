@@ -75,6 +75,7 @@ Notes:
 |---|---|
 | macOS says the app can't be opened | Right-click the app > **Open** > **Open** (only needed once). |
 | Nothing opens when I click the icon | Check `~/.pdf-to-sheet/app.log`, then try `./run.command` in the folder. |
+| Nothing opens, and `app.log` mentions "incompatible architecture" | The app was installed in Intel (Rosetta) mode on an Apple Silicon Mac. Update the code (`git pull`), then run `rm -rf .venv && ./install.sh`. The installer now fixes this itself. |
 | "Access blocked" when signing in | Add your Gmail address under **Audience > Test users** in Google Cloud (setup step 5). |
 | "Your Google sign-in has expired" | Click **Sign in with Google** in Settings. |
 | "Couldn't open that sheet" | Check the URL, and that the account you signed in with can edit the sheet. |

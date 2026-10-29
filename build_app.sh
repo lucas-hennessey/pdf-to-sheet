@@ -63,8 +63,11 @@ mkdir -p "\$HOME/.pdf-to-sheet"
 # Already running (e.g. second click): just bring up the page.
 if curl -s -o /dev/null --max-time 1 "\$URL"; then open "\$URL"; exit 0; fi
 cd "\$PROJECT" || exit 1
+# On Apple Silicon always run natively: the dependencies were installed for the native architecture.
+ARCH=()
+[[ "\$(sysctl -in hw.optional.arm64 2>/dev/null)" == "1" ]] && ARCH=(arch -arm64)
 # exec so quitting the Dock icon stops the server too.
-exec "\$PROJECT/.venv/bin/python" -W ignore app.py >> "\$HOME/.pdf-to-sheet/app.log" 2>&1
+exec "\${ARCH[@]}" "\$PROJECT/.venv/bin/python" -W ignore app.py >> "\$HOME/.pdf-to-sheet/app.log" 2>&1
 LAUNCH
 chmod +x "$APP/Contents/MacOS/launch"
 rm -rf "$BUILD"
