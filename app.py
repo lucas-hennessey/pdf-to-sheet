@@ -1,5 +1,6 @@
 """Local drag-and-drop app: parse foundation PDFs and append them to a Google Sheet."""
 import json
+import os
 import tempfile
 import threading
 import webbrowser
@@ -8,6 +9,7 @@ from pathlib import Path
 from flask import Flask, jsonify, render_template, request
 
 import sheets
+import updater
 from parser import HEADERS, parse_pdf
 
 PORT = 5757
@@ -16,7 +18,7 @@ app = Flask(__name__)
 
 @app.get("/")
 def index():
-    return render_template("index.html", headers=HEADERS)
+    return render_template("index.html", headers=HEADERS, version=updater.local_version())
 
 
 @app.get("/api/status")
@@ -49,6 +51,22 @@ def client_upload():
     sheets.USER_CLIENT_PATH.write_bytes(raw)
     sheets.sign_out()  # new client -> any old sign-in is no longer valid
     return jsonify(sheets.status())
+
+
+@app.get("/api/update/check")
+def update_check():
+    return jsonify(updater.check())
+
+
+@app.post("/api/update/apply")
+def update_apply():
+    try:
+        version = updater.apply()
+    except Exception as e:
+        return jsonify(error=str(e)), 400
+    # Restart after the response has been sent so the page can wait for the new server.
+    threading.Timer(0.5, updater.restart).start()
+    return jsonify(ok=True, version=version)
 
 
 @app.post("/api/signin")
@@ -104,5 +122,6 @@ def send():
 
 
 if __name__ == "__main__":
-    threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{PORT}")).start()
+    if not os.environ.get("PTS_RESTARTED"):  # an update restart reuses the tab that's already open
+        threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{PORT}")).start()
     app.run(host="127.0.0.1", port=PORT)  # loopback only: nothing is exposed to the network

@@ -36,6 +36,7 @@
   td.blank input { background:color-mix(in srgb, var(--warn) 14%, transparent); }
   td.x button { border:0; background:none; color:var(--muted); padding:7px 10px; }
   #msg { margin-top:10px; }
+  .update { display:flex; justify-content:space-between; align-items:center; gap:12px; border-color:var(--accent); }
   .guide { border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:var(--bg); }
   .guide summary { cursor:pointer; font-weight:600; }
   .guide ol { padding-left:20px; } .guide li { margin:8px 0; }
@@ -46,9 +47,14 @@
 <body>
 <main>
   <header>
-    <h1>PDF to Sheet</h1>
+    <h1>PDF to Sheet <span class="muted" style="font-size:12px;font-weight:400">v{{ version }}</span></h1>
     <button id="settingsBtn">Settings</button>
   </header>
+
+  <div id="update" class="card hidden update">
+    <span id="updateText"></span>
+    <button id="updateBtn" class="primary">Update now</button>
+  </div>
 
   <section id="settings" class="card settings hidden">
     <details id="guide" class="guide">
@@ -214,6 +220,29 @@ $('sendBtn').onclick = async () => {
     if (r.added || r.skipped.length) { items = []; render(); }
   } catch (err) { msg($('msg'), err.message, 'err'); }
   $('sendBtn').disabled = false;
+};
+
+// ---- updates ----
+api('/api/update/check').then(u => {
+  if (!u.update_available) return;
+  $('updateText').textContent = `Version ${u.latest} is available (you have ${u.current}).`;
+  $('update').classList.remove('hidden');
+}).catch(() => {}); // offline or can't check: stay quiet
+
+$('updateBtn').onclick = async () => {
+  $('updateBtn').disabled = true; $('updateText').textContent = 'Updating… the app will restart.';
+  try {
+    await api('/api/update/apply', {method:'POST'});
+    // Wait for the restarted server, then reload to get the new version.
+    await new Promise(r => setTimeout(r, 1500));
+    for (let i = 0; i < 60; i++) {
+      try { await api('/api/status'); location.reload(); return; } catch (e) { await new Promise(r => setTimeout(r, 500)); }
+    }
+    $('updateText').textContent = 'Updated. Please reopen the app.';
+  } catch (err) {
+    $('updateText').textContent = 'Update failed: ' + err.message; $('updateText').className = 'err';
+    $('updateBtn').disabled = false;
+  }
 };
 
 api('/api/status').then(showStatus);
