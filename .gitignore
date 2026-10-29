@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.DS_Store
+# Google OAuth client and tokens must never be committed
+google_client.json
+client_secret*.json
+token.json

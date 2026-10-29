@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF to Sheet</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c1e21; --muted:#6b7280; --line:#e2e5ea; --accent:#2563eb; --warn:#b45309; --err:#b91c1c; --ok:#15803d; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16181c; --card:#1f2227; --text:#e8eaed; --muted:#9aa1ab; --line:#2f343b; --accent:#6ea0ff; --warn:#f59e0b; --err:#f87171; --ok:#4ade80; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width:1200px; margin:0 auto; padding:24px 20px 60px; }
+  header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  h1 { font-size:20px; margin:0; }
+  button { font:inherit; padding:7px 14px; border-radius:7px; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button:disabled { opacity:.5; cursor:default; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  #drop { border:2px dashed var(--line); border-radius:12px; padding:48px 20px; text-align:center; color:var(--muted); background:var(--card); transition:.15s; cursor:pointer; }
+  #drop.over { border-color:var(--accent); color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--card)); }
+  #drop strong { display:block; font-size:16px; color:var(--text); margin-bottom:4px; }
+  .settings label { display:block; font-weight:600; margin:10px 0 4px; }
+  .settings input[type=text] { width:100%; padding:8px; border:1px solid var(--line); border-radius:7px; background:var(--bg); color:var(--text); font:inherit; }
+  .row { display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+  .muted { color:var(--muted); } .warn { color:var(--warn); } .err { color:var(--err); } .ok { color:var(--ok); }
+  .hidden { display:none; }
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:8px; }
+  table { border-collapse:collapse; width:max-content; min-width:100%; }
+  th, td { border-bottom:1px solid var(--line); padding:0; text-align:left; vertical-align:top; }
+  th { background:var(--bg); padding:7px 8px; font-size:12px; white-space:nowrap; position:sticky; top:0; }
+  td input { width:170px; border:0; padding:7px 8px; background:transparent; color:var(--text); font:inherit; }
+  td input:focus { outline:2px solid var(--accent); outline-offset:-2px; }
+  td.file { padding:7px 8px; white-space:nowrap; max-width:200px; overflow:hidden; text-overflow:ellipsis; }
+  td.blank input { background:color-mix(in srgb, var(--warn) 14%, transparent); }
+  td.x button { border:0; background:none; color:var(--muted); padding:7px 10px; }
+  #msg { margin-top:10px; }
+  .guide { border:1px solid var(--line); border-radius:8px; padding:10px 14px; background:var(--bg); }
+  .guide summary { cursor:pointer; font-weight:600; }
+  .guide ol { padding-left:20px; } .guide li { margin:8px 0; }
+  .guide a { color:var(--accent); }
+  .guide em { font-style:normal; font-weight:600; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>PDF to Sheet</h1>
+    <button id="settingsBtn">Settings</button>
+  </header>
+
+  <section id="settings" class="card settings hidden">
+    <details id="guide" class="guide">
+      <summary>First-time setup: connect your Google account (about 10 minutes, free)</summary>
+      <p class="muted">You only do this once. It lets this app add rows to your sheet as <em>you</em>. The sheet stays private and nothing is shared publicly. Google's screens change now and then, so wording may differ slightly.</p>
+      <ol>
+        <li><strong>Open Google Cloud Console.</strong> Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> and sign in with the Google account that owns (or can edit) your sheet. Accept the terms if asked. No credit card or billing is needed.</li>
+        <li><strong>Create a project.</strong> Click the project menu at the top, then <em>New project</em>. Name it <em>PDF to Sheet</em> and click <em>Create</em>. Make sure it's selected at the top.</li>
+        <li><strong>Turn on the Sheets API.</strong> Open <a href="https://console.cloud.google.com/apis/library/sheets.googleapis.com" target="_blank" rel="noopener">this page</a> and click <em>Enable</em>.</li>
+        <li><strong>Set up the consent screen.</strong> Open <a href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a> and click <em>Get started</em>. App name: <em>PDF to Sheet</em>. Support email: your email. Audience: <em>External</em>. Contact email: your email. Tick the agreement box and click <em>Create</em>.</li>
+        <li><strong>Add yourself as a test user.</strong> In the left menu choose <em>Audience</em>, then under <em>Test users</em> click <em>Add users</em>, enter the Gmail address you'll sign in with, and <em>Save</em>. Skipping this causes an "access blocked" error later.</li>
+        <li><strong>Create the key file.</strong> In the left menu choose <em>Clients</em>, then <em>Create client</em>. Application type: <em>Desktop app</em>. Name: <em>PDF to Sheet</em>. Click <em>Create</em>, then <em>Download JSON</em>.</li>
+        <li><strong>Give the file to this app.</strong> Click the button below and choose the file you just downloaded (it's usually in Downloads and named <em>client_secret_….json</em>).</li>
+        <li><strong>Sign in.</strong> Click <em>Sign in with Google</em> below. Google will say <em>"Google hasn't verified this app."</em> That's expected because it's your own app. Click <em>Advanced</em>, then <em>Go to PDF to Sheet (unsafe)</em>, then <em>Continue</em> and allow access to Google Sheets.</li>
+        <li><strong>Choose your sheet.</strong> Paste the sheet's URL and tab name below and click <em>Save &amp; test connection</em>.</li>
+      </ol>
+      <p class="muted"><strong>Good to know:</strong> while the app is in Google's "testing" mode, your sign-in expires after 7 days. When that happens the app will tell you, and you just click <em>Sign in with Google</em> again (steps 1 to 7 are not repeated). The app only asks for access to Google Sheets, not your other files.</p>
+    </details>
+
+    <label>1. Google key file</label>
+    <div id="clientStatus" class="muted"></div>
+    <input type="file" id="clientFile" accept=".json" class="hidden">
+    <div class="row"><button id="clientBtn">Choose downloaded JSON file…</button></div>
+
+    <label>2. Google account</label>
+    <div id="credStatus" class="muted"></div>
+    <div class="row"><button id="signBtn"></button></div>
+
+    <label for="sheetUrl">3. Google Sheet URL</label>
+    <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/…">
+    <label for="tab">Tab name <span class="muted">(blank = first tab)</span></label>
+    <input type="text" id="tab" placeholder="Sheet1">
+    <div class="row">
+      <button id="saveBtn" class="primary">Save &amp; test connection</button>
+      <span id="settingsMsg"></span>
+    </div>
+  </section>
+
+  <div id="drop"><strong>Drop foundation PDFs here</strong>or click to choose files<input type="file" id="picker" accept=".pdf" multiple class="hidden"></div>
+  <div id="msg"></div>
+
+  <section id="results" class="hidden" style="margin-top:20px">
+    <div class="tablewrap"><table>
+      <thead><tr><th>File</th>{% for h in headers %}<th>{{ h }}</th>{% endfor %}<th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div class="row">
+      <button id="sendBtn" class="primary">Add to Google Sheet</button>
+      <button id="clearBtn">Clear</button>
+      <label class="muted"><input type="checkbox" id="dupes"> Add even if the foundation is already in the sheet</label>
+    </div>
+    <p class="muted">Highlighted cells are blank. Edit any cell before sending. Average Grant Amount is the mean of the grants listed in each PDF's Grants table.</p>
+  </section>
+</main>
+
+<script>
+const HEADERS = {{ headers|tojson }};
+const $ = id => document.getElementById(id);
+let items = []; // {filename, row, warnings}
+
+const msg = (el, text, cls='') => { el.className = cls; el.textContent = text; };
+
+async function api(url, opts) {
+  const r = await fetch(url, opts);
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || 'Request failed');
+  return j;
+}
+
+// ---- settings ----
+function showStatus(s) {
+  $('sheetUrl').value = s.sheet_url; $('tab').value = s.tab;
+  signedIn = s.signed_in;
+  $('signBtn').textContent = s.signed_in ? 'Sign out' : 'Sign in with Google';
+  $('signBtn').disabled = !s.client_configured;
+  msg($('clientStatus'), s.client_configured ? 'Key file added' : 'Not added yet (see the setup steps above)', s.client_configured ? 'ok' : 'muted');
+  msg($('credStatus'), !s.client_configured ? 'Add the key file first' : s.signed_in ? 'Signed in to Google' : 'Not signed in', s.signed_in ? 'ok' : 'muted');
+  // First run: show Settings with the guide open so a new user sees what to do.
+  if (!firstShown) { firstShown = true; if (!s.client_configured || !s.signed_in || !s.sheet_url) { $('settings').classList.remove('hidden'); $('guide').open = !s.client_configured; } }
+  $('sendBtn').title = s.sheet_url ? '' : 'Set a Google Sheet in Settings first';
+}
+$('settingsBtn').onclick = () => $('settings').classList.toggle('hidden');
+let signedIn = false, firstShown = false;
+$('clientBtn').onclick = () => $('clientFile').click();
+$('clientFile').onchange = async e => {
+  const fd = new FormData(); fd.append('file', e.target.files[0]);
+  try { showStatus(await api('/api/client', {method:'POST', body:fd})); msg($('settingsMsg'), ''); }
+  catch (err) { msg($('settingsMsg'), err.message, 'err'); }
+  e.target.value = '';
+};
+$('signBtn').onclick = async () => {
+  msg($('settingsMsg'), signedIn ? '' : 'Finish signing in in the Google window…', 'muted');
+  try { showStatus(await api(signedIn ? '/api/signout' : '/api/signin', {method:'POST'})); if (!signedIn) msg($('settingsMsg'), ''); }
+  catch (err) { msg($('settingsMsg'), err.message, 'err'); }
+};
+$('saveBtn').onclick = async () => {
+  msg($('settingsMsg'), 'Connecting… (a Google sign-in window may open)', 'muted');
+  try {
+    await api('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sheet_url:$('sheetUrl').value, tab:$('tab').value})});
+    const r = await api('/api/test', {method:'POST'});
+    msg($('settingsMsg'), 'Connected: ' + r.name, 'ok'); showStatus(r);
+  } catch (err) { msg($('settingsMsg'), err.message, 'err'); }
+};
+
+// ---- drop / parse ----
+const drop = $('drop');
+drop.onclick = () => $('picker').click();
+$('picker').onchange = e => handle(e.target.files);
+['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => handle(e.dataTransfer.files));
+// Dropping outside the zone shouldn't navigate the window to the PDF.
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => { e.preventDefault(); if (!drop.contains(e.target)) handle(e.dataTransfer.files); });
+
+async function handle(fileList) {
+  const files = [...fileList];
+  if (!files.length) return;
+  msg($('msg'), `Parsing ${files.length} file(s)…`, 'muted');
+  const fd = new FormData(); files.forEach(f => fd.append('files', f));
+  try {
+    const out = await api('/api/parse', {method:'POST', body:fd});
+    const bad = out.filter(o => o.error);
+    items.push(...out.filter(o => !o.error));
+    render();
+    msg($('msg'), bad.map(b => `${b.filename}: ${b.error}`).join('\n'), bad.length ? 'err' : '');
+  } catch (err) { msg($('msg'), err.message, 'err'); }
+}
+
+function render() {
+  $('results').classList.toggle('hidden', !items.length);
+  const tbody = $('rows'); tbody.innerHTML = '';
+  items.forEach((it, i) => {
+    const tr = document.createElement('tr');
+    const f = document.createElement('td'); f.className = 'file'; f.textContent = it.filename;
+    if (it.warnings.length) f.title = it.warnings.join('\n');
+    tr.append(f);
+    HEADERS.forEach(h => {
+      const td = document.createElement('td');
+      const inp = document.createElement('input'); inp.value = it.row[h];
+      const mark = () => td.classList.toggle('blank', inp.value === '');
+      inp.oninput = () => { it.row[h] = inp.value; mark(); }; mark();
+      td.append(inp); tr.append(td);
+    });
+    const x = document.createElement('td'); x.className = 'x';
+    const b = document.createElement('button'); b.textContent = '✕'; b.title = 'Remove';
+    b.onclick = () => { items.splice(i, 1); render(); };
+    x.append(b); tr.append(x); tbody.append(tr);
+  });
+}
+$('clearBtn').onclick = () => { items = []; render(); msg($('msg'), ''); };
+
+// ---- send ----
+$('sendBtn').onclick = async () => {
+  $('sendBtn').disabled = true; msg($('msg'), 'Sending to Google Sheets…', 'muted');
+  // Average Grant Amount is a number in the sheet; keep it numeric when the cell is numeric.
+  const rows = items.map(it => ({...it.row, 'Average Grant Amount': it.row['Average Grant Amount'] === '' || isNaN(it.row['Average Grant Amount']) ? it.row['Average Grant Amount'] : Number(it.row['Average Grant Amount'])}));
+  try {
+    const r = await api('/api/send', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({rows, allow_duplicates:$('dupes').checked})});
+    let t = `Added ${r.added} row(s).`;
+    if (r.skipped.length) t += ` Skipped (already in sheet): ${r.skipped.join(', ')}.`;
+    msg($('msg'), t, 'ok');
+    if (r.added || r.skipped.length) { items = []; render(); }
+  } catch (err) { msg($('msg'), err.message, 'err'); }
+  $('sendBtn').disabled = false;
+};
+
+api('/api/status').then(showStatus);
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+flask
+pymupdf
+gspread
+google-auth-oauthlib
